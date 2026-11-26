@@ -10,12 +10,12 @@ use Illuminate\Validation\ValidationException;
 
 class ShelterAdoptionService
 {
-    public function sanitizeText(?string $value): string
+    public function sanitizeText(?string $value): string //CORRECT
     {
         return trim(preg_replace('/\s+/', ' ', (string) ($value ?? '')));
     }
 
-    public function sanitizePhoneNumber(?string $phone): string
+    public function sanitizePhoneNumber(?string $phone): string // CORRECT
     {
         if ($phone === null || trim($phone) === '') {
             return '';
@@ -51,7 +51,7 @@ class ShelterAdoptionService
                 'pet_name' => $this->sanitizeText($data['pet_name'] ?? null),
                 'microchip_id' => $this->normalizeMicrochipId($data['microchip_id'] ?? null),
                 'intake_date' => $data['intake_date'] ?? null,
-                'spay_neuter_status' => strtoupper($this->sanitizeText($data['spay_neuter_status'] ?? 'Pending')),
+                'spay_neuter_status' => strtoupper($this->sanitizeText($data['spay_neuter_status'] ?? 'Pending')), // USE Str::of()
             ]);
         });
     }

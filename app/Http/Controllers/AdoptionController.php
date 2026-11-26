@@ -47,7 +47,7 @@ class AdoptionController extends Controller
 
     public function update(UpdateAdoptionRequest $request, string $id): RedirectResponse
     {
-        $adoption = Adoption::findOrFail($id);
+        $adoption = Adoption::with(['adopter', 'shelterAnimal'])->findOrFail($id);
         $this->service->updateAdoption($adoption, $request->validated());
 
         return redirect()->route('adoptions.index')->with('success', 'Adoption was updated successfully.');

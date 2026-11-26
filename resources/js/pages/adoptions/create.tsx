@@ -5,10 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Combobox, ComboboxButton, ComboboxInput, ComboboxOption, ComboboxOptions } from '@headlessui/react';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, Check, ChevronsUpDown, HeartHandshake } from 'lucide-react';
-import { useMemo, useState, type FormEventHandler } from 'react';
+import { ArrowLeft, HeartHandshake } from 'lucide-react';
+import { type FormEventHandler } from 'react';
 
 interface AnimalOption {
     id: number;
@@ -38,19 +37,6 @@ export default function CreateAdoption({ animals }: CreateAdoptionProps) {
         payment_status: 'Unpaid',
         approval_status: 'Pending',
     });
-    const [animalQuery, setAnimalQuery] = useState('');
-    const selectedAnimal = animals.find((animal) => String(animal.id) === data.shelter_animal_id) ?? null;
-    const filteredAnimals = useMemo(() => {
-        const query = animalQuery.trim().toLocaleLowerCase();
-
-        if (!query) {
-            return animals;
-        }
-
-        return animals.filter((animal) =>
-            `${animal.pet_name} ${animal.animal_type} ${animal.microchip_id}`.toLocaleLowerCase().includes(query),
-        );
-    }, [animalQuery, animals]);
 
     const submit: FormEventHandler = (event) => {
         event.preventDefault();
@@ -64,9 +50,9 @@ export default function CreateAdoption({ animals }: CreateAdoptionProps) {
             <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-4 md:gap-8 md:p-8">
                 <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                     <div>
-                        <p className="text-sm font-medium text-muted-foreground">Shelter management</p>
+                        <p className="text-muted-foreground text-sm font-medium">Shelter management</p>
                         <h1 className="mt-1 text-2xl font-semibold tracking-tight md:text-3xl">Create adoption</h1>
-                        <p className="mt-2 text-sm text-muted-foreground">Record an adopter, animal, and adoption details.</p>
+                        <p className="text-muted-foreground mt-2 text-sm">Record an adopter, animal, and adoption details.</p>
                     </div>
                     <Button variant="outline" asChild>
                         <Link href={route('adoptions.index')}>
@@ -78,7 +64,7 @@ export default function CreateAdoption({ animals }: CreateAdoptionProps) {
 
                 <form onSubmit={submit} className="space-y-6">
                     <Card className="shadow-sm">
-                        <CardHeader className="border-b bg-muted/20">
+                        <CardHeader className="bg-muted/20 border-b">
                             <div className="flex items-center gap-3">
                                 <span className="flex size-10 items-center justify-center rounded-md bg-pink-100 text-pink-800 dark:bg-pink-950 dark:text-pink-300">
                                     <HeartHandshake className="size-5" aria-hidden="true" />
@@ -123,7 +109,7 @@ export default function CreateAdoption({ animals }: CreateAdoptionProps) {
                                     onChange={(event) => setData('adopter_address', event.target.value)}
                                     rows={3}
                                     placeholder="Street address"
-                                    className="flex min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="border-input bg-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-24 w-full rounded-md border px-3 py-2 text-sm shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50"
                                 />
                                 <InputError message={errors.adopter_address} />
                             </div>
@@ -131,7 +117,7 @@ export default function CreateAdoption({ animals }: CreateAdoptionProps) {
                     </Card>
 
                     <Card className="shadow-sm">
-                        <CardHeader className="border-b bg-muted/20">
+                        <CardHeader className="bg-muted/20 border-b">
                             <CardTitle className="text-base">Adoption details</CardTitle>
                             <CardDescription>Select the animal and record the request status and fee.</CardDescription>
                         </CardHeader>
@@ -139,57 +125,34 @@ export default function CreateAdoption({ animals }: CreateAdoptionProps) {
                         <CardContent className="grid gap-6 pt-6 md:grid-cols-2">
                             <div className="grid gap-2 md:col-span-2">
                                 <Label htmlFor="shelter_animal_id">Animal</Label>
-                                <Combobox
-                                    value={selectedAnimal}
-                                    onChange={(animal: AnimalOption | null) => {
-                                        setData('shelter_animal_id', animal ? String(animal.id) : '');
-                                        setAnimalQuery('');
-                                    }}
-                                    onClose={() => setAnimalQuery('')}
+                                <select
+                                    id="shelter_animal_id"
+                                    value={data.shelter_animal_id}
+                                    onChange={(event) => setData('shelter_animal_id', event.target.value)}
+                                    required
+                                    className="border-input bg-background focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
                                 >
-                                    <div className="relative">
-                                        <ComboboxInput
-                                            id="shelter_animal_id"
-                                            displayValue={(animal: AnimalOption | null) =>
-                                                animal ? `${animal.pet_name} (${animal.animal_type}) - ${animal.microchip_id}` : ''
-                                            }
-                                            onChange={(event) => setAnimalQuery(event.target.value)}
-                                            placeholder="Select an animal"
-                                            required
-                                            autoComplete="off"
-                                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                                        />
-                                        <ComboboxButton
-                                            aria-label="Show animals"
-                                            className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground"
-                                        >
-                                            <ChevronsUpDown className="size-4" aria-hidden="true" />
-                                        </ComboboxButton>
-                                        <ComboboxOptions
-                                            anchor="bottom"
-                                            className="z-50 mt-1 max-h-60 w-[var(--input-width)] overflow-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md empty:invisible"
-                                        >
-                                            {filteredAnimals.map((animal) => (
-                                                <ComboboxOption
-                                                    key={animal.id}
-                                                    value={animal}
-                                                    className="group flex cursor-pointer items-center justify-between gap-3 rounded-sm px-3 py-2 text-sm data-[focus]:bg-accent data-[focus]:text-accent-foreground"
-                                                >
-                                                    <span>
-                                                        {animal.pet_name} ({animal.animal_type}) - {animal.microchip_id}
-                                                    </span>
-                                                    <Check className="invisible size-4 group-data-[selected]:visible" aria-hidden="true" />
-                                                </ComboboxOption>
-                                            ))}
-                                            {filteredAnimals.length === 0 && (
-                                                <div className="px-3 py-2 text-sm text-muted-foreground">
-                                                    {animals.length === 0 ? 'No shelter animals found.' : 'No matching animals.'}
-                                                </div>
-                                            )}
-                                        </ComboboxOptions>
-                                    </div>
-                                </Combobox>
+                                    <option value="" disabled>
+                                        Select an animal
+                                    </option>
+                                    {animals.map((animal) => (
+                                        <option key={animal.id} value={animal.id}>
+                                            {animal.pet_name} ({animal.animal_type}) - {animal.microchip_id}
+                                        </option>
+                                    ))}
+                                </select>
                                 <InputError message={errors.shelter_animal_id} />
+                                {animals.length === 0 && (
+                                    <div className="bg-muted/20 flex flex-col gap-2 rounded-lg border border-dashed p-4 text-sm sm:flex-row sm:items-center sm:justify-between">
+                                        <p className="text-muted-foreground">No shelter animals are available to select yet.</p>
+                                        <Link
+                                            href={route('shelter-animals.create')}
+                                            className="text-primary font-medium underline-offset-4 hover:underline"
+                                        >
+                                            Add a shelter animal
+                                        </Link>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="grid gap-2">
@@ -225,7 +188,7 @@ export default function CreateAdoption({ animals }: CreateAdoptionProps) {
                                     value={data.payment_status}
                                     onChange={(event) => setData('payment_status', event.target.value)}
                                     required
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                    className="border-input bg-background focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
                                 >
                                     <option value="Unpaid">Unpaid</option>
                                     <option value="Partial">Partial</option>
@@ -241,7 +204,7 @@ export default function CreateAdoption({ animals }: CreateAdoptionProps) {
                                     value={data.approval_status}
                                     onChange={(event) => setData('approval_status', event.target.value)}
                                     required
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                    className="border-input bg-background focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden"
                                 >
                                     <option value="Pending">Pending</option>
                                     <option value="Approved">Approved</option>

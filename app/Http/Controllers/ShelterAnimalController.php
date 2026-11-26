@@ -7,7 +7,8 @@ use App\Http\Requests\UpdateShelterAnimalRequest;
 use App\Models\ShelterAnimal;
 use App\Services\ShelterAdoptionService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class ShelterAnimalController extends Controller
 {
@@ -15,16 +16,19 @@ class ShelterAnimalController extends Controller
     {
     }
 
-    public function index(): View
+    public function index(): Response
     {
-        $animals = ShelterAnimal::with('adoptions')->latest()->paginate(15);
+        $animals = ShelterAnimal::withCount('adoptions')->latest()->paginate(15);
 
-        return view('shelter.animals.index', compact('animals'));
+        return Inertia::render('shelter-animals/index', [
+            'animals' => $animals,
+            'success' => session('success'),
+        ]);
     }
 
-    public function create(): View
+    public function create(): Response
     {
-        return view('shelter.animals.create');
+        return Inertia::render('shelter-animals/create');
     }
 
     public function store(StoreShelterAnimalRequest $request): RedirectResponse
@@ -34,11 +38,35 @@ class ShelterAnimalController extends Controller
         return redirect()->route('shelter-animals.index')->with('success', 'Shelter animal was created successfully.');
     }
 
+    public function edit(string $id): Response
+    {
+        $animal = ShelterAnimal::findOrFail($id);
+
+        return Inertia::render('shelter-animals/create', [
+            'animal' => [
+                'id' => $animal->id,
+                'animal_type' => $animal->animal_type,
+                'pet_name' => $animal->pet_name,
+                'microchip_id' => $animal->microchip_id,
+                'intake_date' => $animal->intake_date->toDateString(),
+                'spay_neuter_status' => $animal->spay_neuter_status,
+            ],
+        ]);
+    }
+
     public function update(UpdateShelterAnimalRequest $request, string $id): RedirectResponse
     {
         $animal = ShelterAnimal::findOrFail($id);
         $this->service->updateShelterAnimal($animal, $request->validated());
 
         return redirect()->route('shelter-animals.index')->with('success', 'Shelter animal was updated successfully.');
+    }
+
+    public function destroy(string $id): RedirectResponse
+    {
+        $animal = ShelterAnimal::findOrFail($id);
+        $animal->delete();
+
+        return redirect()->route('shelter-animals.index')->with('success', 'Shelter animal was deleted successfully.');
     }
 }

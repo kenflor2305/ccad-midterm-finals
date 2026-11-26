@@ -17,7 +17,9 @@ Route::middleware(['auth'])->group(function () {
         'index',
         'create',
         'store',
+        'edit',
         'update',
+        'destroy',
     ]);
 
     Route::resource('adoptions', AdoptionController::class)->only([

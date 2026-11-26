@@ -28,7 +28,7 @@ class DashboardController extends Controller
             ->values();
 
         $recentAdoptions = Adoption::query()
-            ->with(['adopter', 'shelterAnimal'])
+            ->with(['adopter', 'shelterAnimal']) //SALA NEED FUTHER OPTIMIZATION
             ->latest('adoption_date')
             ->take(5)
             ->get()
@@ -42,19 +42,38 @@ class DashboardController extends Controller
             ])
             ->values();
 
+        // OPTIMIZED: Consolidated aggregate queries using conditional aggregation
+        $userStats = User::query()
+            ->selectRaw('
+                count(*) as total_users,
+                sum(case when email_verified_at is not null then 1 else 0 end) as verified_users,
+                sum(case when created_at between ? and ? then 1 else 0 end) as new_users_this_month
+            ', [now()->startOfMonth(), now()->endOfMonth()])
+            ->first();
+
+        $shelterStats = ShelterAnimal::query()
+            ->selectRaw('count(*) as total_animals')
+            ->first();
+
+        $adoptionStats = Adoption::query()
+            ->selectRaw('
+                sum(case when approval_status = ? then 1 else 0 end) as pending_approvals,
+                sum(case when approval_status = ? then 1 else 0 end) as approved_adoptions,
+                sum(adoption_fee) as total_fees
+            ', ['Pending', 'Approved'])
+            ->first();
+
         return Inertia::render('dashboard', [
             'stats' => [
-                'users' => User::query()->count(),
-                'verifiedUsers' => User::query()->whereNotNull('email_verified_at')->count(),
-                'newUsersThisMonth' => User::query()
-                    ->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])
-                    ->count(),
+                'users' => (int) ($userStats->total_users ?? 0),
+                'verifiedUsers' => (int) ($userStats->verified_users ?? 0),
+                'newUsersThisMonth' => (int) ($userStats->new_users_this_month ?? 0),
             ],
             'shelterStats' => [
-                'totalAnimals' => ShelterAnimal::query()->count(),
-                'pendingApprovals' => Adoption::query()->where('approval_status', 'Pending')->count(),
-                'approvedAdoptions' => Adoption::query()->where('approval_status', 'Approved')->count(),
-                'totalFees' => (float) Adoption::query()->sum('adoption_fee'),
+                'totalAnimals' => (int) ($shelterStats->total_animals ?? 0),
+                'pendingApprovals' => (int) ($adoptionStats->pending_approvals ?? 0),
+                'approvedAdoptions' => (int) ($adoptionStats->approved_adoptions ?? 0),
+                'totalFees' => (float) ($adoptionStats->total_fees ?? 0),
             ],
             'recentAdoptions' => $recentAdoptions,
             'recentActivity' => $recentActivity,
